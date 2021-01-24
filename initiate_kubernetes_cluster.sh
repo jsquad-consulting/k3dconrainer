@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # Copyright 2021 JSquad AB
@@ -25,6 +25,17 @@ CREATE_CONFIG_MAPS_VOLUMES_FROM_FILES_COMMAND="${6}"
 DEPLOY_YAML_FILES_PATH="${7}"
 SECRETS_ARGUMENTS=""
 LOAD_BALANCER_ARGUMENTS=""
+
+cleanup() {
+  K3S_CONTAINER_IDS=$(docker ps | grep -e "rancher" | awk '{print $1}'  | xargs)
+  for container in ${K3S_CONTAINER_IDS}; do
+    docker stop ${container}
+  done
+  exit 0
+}
+
+trap 'cleanup' SIGINT
+trap 'cleanup' SIGTERM
 
 for port in ${LOAD_BALANCER_PORTS}; do
   LOAD_BALANCER_ARGUMENTS="${LOAD_BALANCER_ARGUMENTS} --port ${port}:${port}@loadbalancer"
@@ -64,3 +75,5 @@ if [[ ! -z "${DEPLOY_YAML_FILES_PATH}" ]]; then
     bash -c "/app/health_check.sh /app/"
   done
 fi
+
+tail -f /dev/null

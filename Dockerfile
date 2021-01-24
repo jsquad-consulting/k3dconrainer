@@ -46,8 +46,7 @@ RUN add-apt-repository \
 RUN apt-get update
 RUN apt-get install docker-ce docker-ce-cli containerd.io -y
 
-HEALTHCHECK CMD ["sh", "-c", "/app/health_check.sh /app/"]
-CMD ["sh", "-c", "/app/initiate_kubernetes_cluster.sh \"${CLUSTER_NAME}\" \"${CLUSTER_API_PORT}\" \
+HEALTHCHECK CMD ["bash", "-c", "/app/health_check.sh /app/"]
+CMD ["bash", "-c", "/app/initiate_kubernetes_cluster.sh \"${CLUSTER_NAME}\" \"${CLUSTER_API_PORT}\" \
 \"${LOAD_BALANCER_PORTS}\" \"${SECRET_ENVIRONMENT}\" \"${SECRETS_ENVIRONMENT_VARIABLES}\" \
-\"${CREATE_CONFIG_MAPS_VOLUMES_FROM_FILES_COMMAND}\" \"${DEPLOY_YAML_FILES_PATH}\" \
-&& tail -f /dev/null"]
+\"${CREATE_CONFIG_MAPS_VOLUMES_FROM_FILES_COMMAND}\" \"${DEPLOY_YAML_FILES_PATH}\""]
