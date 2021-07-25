@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # Copyright 2021 JSquad AB
@@ -32,13 +32,13 @@ done
 
 LOAD_BALANCER_ARGUMENTS=$(bash -c "echo ${LOAD_BALANCER_ARGUMENTS} | xargs")
 
-wget -q -O - https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v3.4.0 bash
+k3d cluster create ${CLUSTER_NAME} --api-port ${CLUSTER_API_PORT} ${LOAD_BALANCER_ARGUMENTS} \
+--k3s-server-arg '--no-deploy=traefik'
 
-bash -c "k3d cluster create ${CLUSTER_NAME} --api-port ${CLUSTER_API_PORT} ${LOAD_BALANCER_ARGUMENTS} \
---k3s-server-arg '--no-deploy=traefik'"
+kubectl config use-context k3d-jsquad
 
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm install my-nginx ingress-nginx/ingress-nginx
+helm install my-nginx ingress-nginx/ingress-nginx --version 3.34.0 --set controller.admissionWebhooks.enabled=false
 
 for secret_variable in ${SECRETS_ENVIRONMENT_VARIABLES}; do
   SECRETS_ARGUMENTS="${SECRETS_ARGUMENTS} --from-literal=${secret_variable}"
@@ -60,7 +60,7 @@ if [[ ! -z "${DEPLOY_YAML_FILES_PATH}" ]]; then
   :
   yaml_files=$(ls -v "${DEPLOY_YAML_FILES_PATH}" | xargs)
   for yaml_file in ${yaml_files}; do
-    bash -c "kubectl apply -f "${DEPLOY_YAML_FILES_PATH}"/${yaml_file}"
+    kubectl apply -f "${DEPLOY_YAML_FILES_PATH}"/${yaml_file}
     bash -c "/app/health_check.sh /app/"
   done
 fi

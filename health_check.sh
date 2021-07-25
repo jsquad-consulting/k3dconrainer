@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # Copyright 2021 JSquad AB
@@ -20,23 +20,28 @@ SCRIPT_PATH=${1:-'./'}
 
 PODS=$(kubectl get pods | awk 'FNR > 1 {print $1}' | xargs)
 
+while [ -z "$PODS" ]; do
+  PODS=$(kubectl get pods | awk 'FNR > 1 {print $1}' | xargs)
+  sleep 5
+done
+
 for pod in $PODS;
 do
   STATUS=$(kubectl get pod "$pod" | awk 'FNR > 1 {print $3}')
   if [ "$STATUS" == "Running" ];
   then :
-    command="kubectl describe pod ${pod} | grep -Po 'ContainersReady.*True' | head -1 | grep -Po 'True'"
+    command="kubectl describe pod ${pod} | grep -o 'ContainersReady.*True' | head -1 | grep -o 'True'"
     "$SCRIPT_PATH"verify_if_deployed_service_is_ready.sh "$pod" "$command"
   fi
 done
 
-DEPLOYMENTS=$(kubectl get deployments| awk 'FNR > 1 {print $1}' | xargs)
+DEPLOYMENTS=$(kubectl get deployments | awk 'FNR > 1 {print $1}' | xargs)
 
 for deployment in $DEPLOYMENTS;
 do
-    command="kubectl describe deployment ${deployment} | grep -Po 'Available.*True' | head -1 | grep -Po 'True'"
+    command="kubectl describe deployment ${deployment} | grep -o 'Available.*True' | head -1 | grep -o 'True'"
     "$SCRIPT_PATH"verify_if_deployed_service_is_ready.sh "$pod" "$command"
 
-    command="kubectl describe deployment ${deployment} | grep -Po 'Progressing.*True' | head -1 | grep -Po 'True'"
+    command="kubectl describe deployment ${deployment} | grep -o 'Progressing.*True' | head -1 | grep -o 'True'"
     "$SCRIPT_PATH"verify_if_deployed_service_is_ready.sh "$pod" "$command"
 done
